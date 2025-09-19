@@ -34,11 +34,37 @@ export default {
     handleFileChange(e) {
       this.selectedFiles = Array.from(e.target.files);
     },
-    submitFiles() {
+    async submitFiles() {
       if (!this.selectedFiles.length) return;
-      // Placeholder for actual submission logic
-      alert(`Submitting ${this.selectedFiles.length} file(s) to Vextapp.`);
-      this.selectedFiles = [];
+      const formData = new FormData();
+      this.selectedFiles.forEach((file) => {
+        formData.append("files[]", file);
+      });
+      try {
+        const response = await fetch(
+          "https://api.vextapp.com/openapi/v2/data-source",
+          {
+            method: "POST",
+            headers: {
+              accept: "application/json",
+              "content-type": "multipart/form-data",
+              "Api-Key": "Vz4TkVhW.DCsMvTZeowEiOlHwhjslkDBk5tujEuU6", // Replace with your actual API key
+            },
+            body: JSON.stringify({
+              dataset_id: "f107b40a-b2ad-41e1-8d30-6e9055d0a7ce",
+              files: [],
+            }),
+          }
+        );
+        if (response.ok) {
+          alert("Files uploaded successfully!");
+          this.selectedFiles = [];
+        } else {
+          alert("File upload failed.");
+        }
+      } catch (error) {
+        alert("Error uploading files.");
+      }
     },
   },
   beforeDestroy() {
