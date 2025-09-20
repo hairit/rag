@@ -56,7 +56,7 @@ export default {
           this.rendering = false;
           this.aiBuffer = "";
         }
-      }, 30);
+      }, 20);
       this.input = "";
     },
     handleFileChange(e) {
@@ -159,7 +159,6 @@ export default {
           :class="['message', msg.role]"
         >
           <template v-if="msg.role === 'user'">
-            <span class="user-label">You:</span>
             <span class="msg-text">{{ msg.text }}</span>
           </template>
           <template v-else-if="msg.role === 'ai'">
