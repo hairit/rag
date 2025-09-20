@@ -44,7 +44,7 @@ export default {
         method: "POST",
         headers: {
           accept: "application/json",
-          Apikey: process.env.VEXT_API_KEY,
+          Apikey: import.meta.env.VEXT_API_KEY,
         },
         body: form,
       })
