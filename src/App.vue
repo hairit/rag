@@ -4,28 +4,56 @@ export default {
     return {
       messages: [],
       input: "",
-      loading: false,
+      answering: false,
+      rendering: false,
       aiBuffer: "",
       aiInterval: null,
       selectedFiles: [],
     };
   },
   methods: {
-    sendMessage() {
-      if (this.input.trim() === "") return;
-      this.messages.push({ role: "user", text: this.input });
-      this.loading = true;
+    async getAnswer(question) {
+      let answer = null;
+      await fetch("https://payload.vextapp.com/hook/D3C3T4ZEUB/catch/hello", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Apikey: `Api-Key ${import.meta.env.VITE_API_KEY_RAG}`,
+        },
+        body: JSON.stringify({ payload: question }),
+      })
+        .then((response) => {
+          if (response.ok) {
+            answer = response.json();
+          } else {
+            throw new Error("Request failed with status " + response.status);
+          }
+        })
+        .catch((error) => console.error("Error making API call:", error));
+      return answer;
+    },
+    async sendMessage() {
+      if (this.input.trim() === "" || this.rendering || this.answering) return;
+      let question = this.input;
+      this.input = "";
+      this.messages.push({ role: "user", text: question });
+      // Get answer from API
+      this.answering = true;
+      let answer = await this.getAnswer(question);
+      this.answering = false;
+      let answerText = answer.text ?? "I'm tired, sorry.";
+      // Lazy load effect
+      this.rendering = true;
       this.aiBuffer = "";
-      const fullText = `This is a mock answer for: "${this.input}"`;
       let i = 0;
       this.aiInterval = setInterval(() => {
-        if (i < fullText.length) {
-          this.aiBuffer += fullText[i];
+        if (i < answerText.length) {
+          this.aiBuffer += answerText[i];
           i++;
         } else {
           clearInterval(this.aiInterval);
           this.messages.push({ role: "ai", text: this.aiBuffer });
-          this.loading = false;
+          this.rendering = false;
           this.aiBuffer = "";
         }
       }, 30);
@@ -44,7 +72,7 @@ export default {
         method: "POST",
         headers: {
           accept: "application/json",
-          Apikey: import.meta.env.VITE_VEXT_API_KEY,
+          Apikey: `Api-Key ${import.meta.env.VITE_API_KEY_RAG}`,
         },
         body: form,
       })
@@ -142,7 +170,20 @@ export default {
             </div>
           </template>
         </div>
-        <div v-if="loading" class="message ai">
+        <div v-if="answering" class="message ai answering">
+          <img src="/ai-avatar.png" alt="AI Avatar" class="avatar" />
+          <div class="ai-content">
+            <span class="ai-label">Marcus</span>
+            <span class="msg-text">
+              <span class="typing-indicator">
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+              </span>
+            </span>
+          </div>
+        </div>
+        <div v-if="rendering" class="message ai">
           <img src="/ai-avatar.png" alt="AI Avatar" class="avatar" />
           <div class="ai-content">
             <span class="ai-label">Marcus</span>
@@ -157,7 +198,7 @@ export default {
           rows="2"
           @keydown.enter.exact.prevent="sendMessage"
         ></textarea>
-        <button type="submit">Send</button>
+        <button type="submit" :disabled="answering || rendering">Send</button>
       </form>
     </div>
   </div>
@@ -324,6 +365,32 @@ body,
   align-items: flex-start;
   gap: 8px;
 }
+.message.ai.answering {
+  background: linear-gradient(90deg, #e3f2fd 60%, #bbdefb 100%);
+  color: #1976d2;
+  box-shadow: 0 2px 12px rgba(25, 118, 210, 0.12);
+  opacity: 0.85;
+  position: relative;
+  border: none;
+}
+.message.ai.answering .msg-text {
+  font-style: italic;
+  font-size: 1.05em;
+  letter-spacing: 2px;
+  color: #1976d2;
+  animation: pulse 1.2s infinite;
+}
+@keyframes pulse {
+  0% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.5;
+  }
+}
 .message.ai .ai-content {
   display: flex;
   flex-direction: column;
@@ -466,5 +533,44 @@ body,
 .fade-enter,
 .fade-leave-to {
   opacity: 0;
+}
+.typing-indicator {
+  display: inline-block;
+  margin-right: 10px;
+  vertical-align: middle;
+}
+.dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin: 0 2px;
+  background: #42a5f5;
+  border-radius: 50%;
+  opacity: 0.6;
+  animation: typing 1.2s infinite;
+}
+.dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+@keyframes typing {
+  0%,
+  80%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1.3);
+  }
+}
+.typing-text {
+  font-style: italic;
+  color: #1976d2;
+  font-size: 1em;
+  vertical-align: middle;
 }
 </style>
