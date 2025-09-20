@@ -36,35 +36,21 @@ export default {
     },
     async submitFiles() {
       if (!this.selectedFiles.length) return;
-      const formData = new FormData();
-      this.selectedFiles.forEach((file) => {
-        formData.append("files[]", file);
-      });
-      try {
-        const response = await fetch(
-          "https://api.vextapp.com/openapi/v2/data-source",
-          {
-            method: "POST",
-            headers: {
-              accept: "application/json",
-              "content-type": "multipart/form-data",
-              "Api-Key": "Vz4TkVhW.DCsMvTZeowEiOlHwhjslkDBk5tujEuU6", // Replace with your actual API key
-            },
-            body: JSON.stringify({
-              dataset_id: "f107b40a-b2ad-41e1-8d30-6e9055d0a7ce",
-              files: [],
-            }),
-          }
-        );
-        if (response.ok) {
-          alert("Files uploaded successfully!");
-          this.selectedFiles = [];
-        } else {
-          alert("File upload failed.");
-        }
-      } catch (error) {
-        alert("Error uploading files.");
-      }
+      const form = new FormData();
+      form.append("file", this.selectedFiles[0]);
+      form.append("dataset_id", "f107b40a-b2ad-41e1-8d30-6e9055d0a7ce");
+
+      fetch("https://api.vextapp.com/openapi/v2/data-source", {
+        method: "POST",
+        headers: {
+          accept: "application/json",
+          Apikey: process.env.VEXT_API_KEY,
+        },
+        body: form,
+      })
+        .then((res) => res.json())
+        .then(() => alert("File uploaded"))
+        .catch((err) => alert(err));
     },
   },
   beforeDestroy() {
